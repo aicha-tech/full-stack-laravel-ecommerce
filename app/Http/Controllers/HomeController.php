@@ -79,39 +79,49 @@ class HomeController extends Controller
     }
 
 
-    public function add_cart(Request $request,$id){
-        if(Auth::id()){
-            
-            $user=Auth::User();
-            $product=product::find($id);
-            $cart=new cart;
-            $cart->name=$user->name;
-            $cart->email=$user->email;
-            $cart->phone=$user->phone;
-            $cart->address=$user->adresse;
-            $cart->user_id=$user->id;
-            $cart->Product_title=$product->title;
-           if($product->discount_price!= null){
-            $cart->price=$product->discount_price *$request->Quantity;
-           }
-           else{
-            $cart->price=$product->price *$request->Quantity;
-           }
-            
-            $cart->Product_id=$product->id;
-            $cart->image=$product->image;
-            $cart->quantity=$request->Quantity;
-            $cart ->save();
-            return redirect()->back();
+    public function add_cart(Request $request, $id)
+{
+    if (Auth::id()) {
+        $user = Auth::user();
+        $product = Product::find($id);
 
-
-
+        // Check if product exists
+        if (!$product) {
+            return redirect()->back()->with('error', 'Product not found');
         }
 
-        else{
-            return redirect('login');
+        // Validate quantity
+        $quantity = intval($request->input('quantity', 1)); // Default to 1 if not provided
+        if ($quantity < 1) {
+            $quantity = 1;
         }
+
+        // Create new cart item
+        $cart = new Cart;
+        $cart->name = $user->name;
+        $cart->email = $user->email;
+        $cart->phone = $user->phone;
+        $cart->address = $user->adresse;
+        $cart->user_id = $user->id;
+        $cart->Product_title = $product->title;
+
+        // Calculate price based on discount_price or price
+        if ($product->discount_price != null) {
+            $cart->price = floatval($product->discount_price) * $quantity;
+        } else {
+            $cart->price = floatval($product->price) * $quantity;
+        }
+
+        $cart->Product_id = $product->id;
+        $cart->image = $product->image;
+        $cart->quantity = $quantity;
+        $cart->save();
+
+        return redirect()->back()->with('message', 'Product added to cart successfully');
+    } else {
+        return redirect('login');
     }
+}
     
     public function product_view(){
         if(Auth::id()){
